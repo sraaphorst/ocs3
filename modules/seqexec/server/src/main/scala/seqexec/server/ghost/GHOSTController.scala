@@ -60,24 +60,41 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
     }
   }
 
-  private def srifuConfig(config: GHOSTConfig): Configuration =
-    ifuConfig(IFUNum.IFU1, config.srifu1Name, config.srifu1CoordsRAHMS,
-      config.srifu1CoordsDecDMS, BundleConfig.Standard) |+|
-      ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS,
-        config.srifu2CoordsDecDMS, BundleConfig.Standard)
+  private def ifu1Config(config: GHOSTConfig): Configuration = {
+    val srConfig = ifuConfig(IFUNum.IFU1, config.srifu1Name, config.srifu1CoordsRAHMS,
+      config.srifu1CoordsDecDMS, BundleConfig.Standard)
+    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu1Name, config.hrifu1CoordsRAHMS,
+      config.hrifu1CoordsDecDMS, BundleConfig.HighRes)
+    srConfig |+| hrConfig
+  }
 
-  private def hrifuConfig(config: GHOSTConfig): Configuration =
-    ifuConfig(IFUNum.IFU2, config.hrifu1Name, config.hrifu1CoordsRAHMS,
-      config.hrifu1CoordsDecDMS, BundleConfig.HighRes) |+|
-      ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS, config.srifu2CoordsDecDMS,
-        BundleConfig.HighRes)
+  private def ifu2Config(config: GHOSTConfig): Configuration = {
+    val srConfig = ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS,
+      config.srifu2CoordsDecDMS, BundleConfig.Standard)
+    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu2Name, config.srifu2CoordsRAHMS, config.srifu2CoordsDecDMS,
+      BundleConfig.HighRes)
+    srConfig |+| hrConfig
+  }
+
 
   // If the srifu parameters are defined, use them; otherwise, use the hrifu parameters.
   // Which set of parameters is determined completely by which of srifuName and hrifuName is set.
   // TODO: What do we do with the base position explicit override?
   // TODO: This was not on the list of provided parameter names.
   private def ghostConfig(config: GHOSTConfig): SeqActionF[F, CommandResult] = {
-    val giapiApply = srifuConfig(config) |+| hrifuConfig(config)
+    val giapiApplyUF1Config = ifu1Config(config)
+    val giapiApplyUF1Modified = if (giapiApplyUF1Config === Configuration.Zero) {
+      Configuration.single(s"${IFUNum.IFU1.ifuStr}.target", IFUTargetType.NoTarget.targetType) |+|
+        Configuration.single(s"${IFUNum.IFU1.ifuStr}.type", DemandType.DemandPark.demandType)
+    } else giapiApplyUF1Config
+
+    val giapiApplyUF2Config = ifu2Config(config)
+    val giapiApplyUF2Modified = if (giapiApplyUF2Config === Configuration.Zero) {
+      Configuration.single(s"${IFUNum.IFU2.ifuStr}.target", IFUTargetType.NoTarget.targetType) |+|
+        Configuration.single(s"${IFUNum.IFU2.ifuStr}.type", DemandType.DemandPark.demandType)
+    } else giapiApplyUF2Config
+    
+    val giapiApply = giapiApplyUF1Modified |+| giapiApplyUF2Modified
 
     EitherT(ghostClient.genericApply(giapiApply).attempt)
       .leftMap {
@@ -128,11 +145,11 @@ object GHOSTController {
     case object IFU2 extends IFUNum(ifuNum = 2)
   }
 
-  sealed abstract class IFUTargetType(val targetType: Int)
+  sealed abstract class IFUTargetType(val targetType: String)
   object IFUTargetType {
-    case object NoTarget extends IFUTargetType(targetType = 0)
-    case object SkyPosition extends IFUTargetType(targetType = 1)
-    case object Target extends IFUTargetType(targetType = 2)
+    case object NoTarget extends IFUTargetType(targetType = "IFU_TARGET_NONE")
+    case object SkyPosition extends IFUTargetType(targetType = "IFU_TARGET_SKY")
+    case object Target extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
 
     def determineType(name: Option[String]): IFUTargetType = name match {
       case None        => NoTarget
