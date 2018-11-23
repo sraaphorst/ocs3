@@ -635,7 +635,7 @@ lazy val seqexecCommonSettings = Seq(
     // Support remote JMX access
     "-J-Dcom.sun.management.jmxremote",
     "-J-Dcom.sun.management.jmxremote.authenticate=false",
-    "-J-Dcom.sun.management.jmxremote.port=2407",
+    "-J-Dcom.sun.management.jmxremote.port=2408",
     "-J-Dcom.sun.management.jmxremote.ssl=false",
     // Ensure the local is correctly set
     "-J-Duser.language=en",

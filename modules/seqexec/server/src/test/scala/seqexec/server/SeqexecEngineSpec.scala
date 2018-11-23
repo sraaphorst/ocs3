@@ -39,7 +39,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     dhsControl = Simulated,
     f2Control = Simulated,
     gcalControl = Simulated,
-    ghostControl = Full,
+    ghostControl = FullControl,
     gmosControl = Simulated,
     gnirsControl = Simulated,
     gpiControl = Simulated,
