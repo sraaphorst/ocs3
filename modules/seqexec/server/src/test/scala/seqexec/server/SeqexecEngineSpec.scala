@@ -33,13 +33,13 @@ import shapeless.tag
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
 class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertions {
   private val defaultSettings = Settings(Site.GS,
-    odbHost = "localhost",
+    odbHost = "172.17.111.21",
     date = LocalDate.of(2017, 1, 1),
     dhsURI = "http://localhost/",
     dhsControl = Simulated,
     f2Control = Simulated,
     gcalControl = Simulated,
-    ghostControl = Simulated,
+    ghostControl = Full,
     gmosControl = Simulated,
     gnirsControl = Simulated,
     gpiControl = Simulated,
