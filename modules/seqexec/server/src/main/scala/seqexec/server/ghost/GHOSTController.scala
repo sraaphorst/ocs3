@@ -78,9 +78,8 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
 
 
   // If the srifu parameters are defined, use them; otherwise, use the hrifu parameters.
-  // Which set of parameters is determined completely by which of srifuName and hrifuName is set.
-  // TODO: What do we do with the base position explicit override?
-  // TODO: This was not on the list of provided parameter names.
+  // Which set of parameters to use is determined completely by which of srifuName and hrifuName is set.
+  // If neither is set, we do not use the IFU and request to be parked.
   private def ghostConfig(config: GHOSTConfig): SeqActionF[F, CommandResult] = {
     val giapiApplyUF1Config = ifu1Config(config)
     val giapiApplyUF1Modified = if (giapiApplyUF1Config === Configuration.Zero) {
@@ -93,7 +92,7 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
       Configuration.single(s"${IFUNum.IFU2.ifuStr}.target", IFUTargetType.NoTarget.targetType) |+|
         Configuration.single(s"${IFUNum.IFU2.ifuStr}.type", DemandType.DemandPark.demandType)
     } else giapiApplyUF2Config
-    
+
     val giapiApply = giapiApplyUF1Modified |+| giapiApplyUF2Modified
 
     EitherT(ghostClient.genericApply(giapiApply).attempt)
@@ -113,13 +112,15 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
       _ <- SeqActionF.apply(Log.debug("Completed GHOST configuration"))
     } yield ()
 
+  // We use a dummy observation for now, since at this point, we cannot actually observe using the instrument.
   def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    EitherT(ghostClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
-      .leftMap {
-        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
-        case CommandResultException(_, m)                        => Execution(m)
-        case f                                                   => SeqexecException(f)
-      }
+    SeqActionF.apply(fileId)
+//    EitherT(ghostClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
+//      .leftMap {
+//        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
+//        case CommandResultException(_, m)                        => Execution(m)
+//        case f                                                   => SeqexecException(f)
+//      }
 
   def endObserve: SeqActionF[F, Unit] = SeqActionF.void
 }
