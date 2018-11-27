@@ -34,7 +34,7 @@ final class AngleSpec extends CatsSuite {
   checkAll("dms", IsoTests(Angle.dms))
   checkAll("fromStringDMS", FormatTests(Angle.fromStringDMS).formatWith(ArbAngle.stringsDMS))
   checkAll("fromStringSignedDMS", FormatTests(Angle.fromStringSignedDMS).formatWith(ArbAngle.stringsSignedDMS))
-
+h
   test("Equality must be natural") {
     forAll { (a: Angle, b: Angle) =>
       a.equals(b) shouldEqual Eq[Angle].eqv(a, b)

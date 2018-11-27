@@ -85,7 +85,7 @@ object GHOST {
     }
 
     val raExtractor = formatExtractor[HourAngle](HourAngle.fromStringHMS)
-    val decExtractor = formatExtractor[Angle](Angle.fromStringDMS)
+    val decExtractor = formatExtractor[Angle](Angle.fromStringSignedDMS)
 
     EitherT {
       Sync[F].delay {
