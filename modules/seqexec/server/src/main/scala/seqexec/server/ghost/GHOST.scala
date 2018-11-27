@@ -11,7 +11,7 @@ import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.Ghost
-import gem.math.{Angle, HourAngle}
+import gem.math.{Declination, RightAscension}
 import gem.optics.Format
 
 import scala.concurrent.duration._
@@ -84,9 +84,8 @@ object GHOST {
       }.getOrElse(Right(None))
     }
 
-    val raExtractor = formatExtractor[HourAngle](HourAngle.fromStringHMS)
-    val decExtractor = formatExtractor[Angle](Angle.fromStringSignedDMS)
-
+    val raExtractor = formatExtractor[RightAscension](RightAscension.fromStringHMS)//HourAngle.fromStringHMS)
+    val decExtractor = formatExtractor[Declination](Declination.fromStringSignedDMS)
     EitherT {
       Sync[F].delay {
         (for {
